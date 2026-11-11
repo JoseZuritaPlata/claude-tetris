@@ -86,36 +86,68 @@ jobs:
                Si el issue fue editado y algún label que pusiste antes ya no aplica, quítalo con
                `--remove-label`. Solo usa labels que existan en `gh label list`.
             6. Escribe el diagnóstico en el archivo `.claude-triage/diagnostico.md`
-               (NO lo publiques tú; un paso posterior lo publica como comentario).
-               Usa español y exactamente esta estructura en Markdown:
+               (NO lo publiques tú; un paso posterior lo publica tal cual como comentario
+               del issue). Sigue las reglas de formato y la plantilla de abajo.
 
-               ## 🔍 Diagnóstico automático
-               **Tipo:** … · **Prioridad:** … · **Área:** …
+            REGLAS DE FORMATO (GitHub Flavored Markdown; el archivo se pega tal cual en el comentario):
+            - Escribe en español.
+            - El archivo es Markdown directo: NO lo envuelvas en un bloque ```markdown ni en
+              ningún otro bloque de código.
+            - Ninguna línea de texto normal puede empezar con espacios: con 4 o más espacios
+              GitHub la muestra como código. Solo se indenta dentro de listas anidadas.
+            - Deja una línea en blanco antes y después de cada encabezado, lista, tabla y bloque de código.
+            - Cada referencia a código debe ser un enlace clicable a la línea exacta, con este formato:
+              [`game.js:42`](https://github.com/${{ github.repository }}/blob/${{ github.sha }}/game.js#L42)
+              Para un rango usa `#L42-L50`.
+            - Los fragmentos de código van en bloques con lenguaje: ```js, ```html o ```css.
+            - Los criterios de aceptación son una task list: `- [ ] ...`.
+            - Para listas de archivos puedes usar una tabla Markdown (| Archivo | Función | Motivo |).
+            - Los issues relacionados se enlazan como #123 (GitHub los convierte en enlace).
+            - No uses HTML salvo el <sub> del pie de página.
 
-               ### Resumen
-               Qué se reporta o se pide, en 1–3 frases.
+            PLANTILLA (cópiala sin indentación y reemplaza el texto entre corchetes):
 
-               ### Análisis
-               Causa probable (si es bug) o qué implica el cambio (si es mejora), citando el
-               código relevante como `archivo:línea` y explicando cómo encaja con la arquitectura.
+            ## 🔍 Diagnóstico automático
 
-               ### Archivos y funciones involucradas
-               Lista de `archivo:línea` → función/constante y por qué es relevante.
+            **Tipo:** [tipo] · **Prioridad:** [prioridad] · **Área:** [áreas]
 
-               ### Propuesta de solución
-               Pasos concretos para implementarla (qué cambiar y dónde), con fragmentos de
-               código cortos si ayudan. Menciona constantes acopladas que haya que mantener
-               sincronizadas (por ejemplo PIECES/COLORS, COLS/ROWS/BLOCK con el canvas).
+            ### 📝 Resumen
 
-               ### Criterios de aceptación
-               Checklist (`- [ ]`) para verificar la solución jugando en el navegador.
+            [Qué se reporta o se pide, en 1–3 frases.]
 
-               ### Riesgos / preguntas abiertas
-               Lo que no está claro, efectos colaterales o información que falta.
-               Si hay posibles duplicados, enlázalos aquí.
+            ### 🧠 Análisis
 
-               ---
-               <sub>Generado por Claude al ${{ github.event.action == 'opened' && 'abrir' || 'editar' }} el issue. Se actualizará si el issue se edita.</sub>
+            [Causa probable (si es bug) o qué implica el cambio (si es mejora), con enlaces a las
+            líneas de código relevantes y cómo encaja con la arquitectura.]
+
+            ### 📂 Archivos y funciones involucradas
+
+            | Archivo | Función / constante | Motivo |
+            |---|---|---|
+            | [enlace a la línea] | [`nombre`] | [por qué es relevante] |
+
+            ### 🛠️ Propuesta de solución
+
+            1. [Paso concreto: qué cambiar y dónde, con enlace a la línea.]
+            2. [...]
+
+            [Fragmentos de código cortos en bloques ```js si ayudan. Menciona las constantes
+            acopladas que haya que mantener sincronizadas, por ejemplo PIECES/COLORS o
+            COLS/ROWS/BLOCK con el tamaño del canvas.]
+
+            ### ✅ Criterios de aceptación
+
+            - [ ] [Verificación que se pueda hacer jugando en el navegador.]
+            - [ ] [...]
+
+            ### ⚠️ Riesgos / preguntas abiertas
+
+            - [Lo que no está claro, efectos colaterales o información que falta.]
+            - [Posibles duplicados como #123, o "Ninguno detectado".]
+
+            ---
+
+            <sub>🤖 Generado por Claude al ${{ github.event.action == 'opened' && 'abrir' || 'editar' }} el issue. Se actualizará si el issue se edita.</sub>
           claude_args: >-
             --max-turns 30
             --allowedTools "Read,Glob,Grep,Write(.claude-triage/**),Bash(gh issue view ${{ github.event.issue.number }}:*),Bash(gh issue edit ${{ github.event.issue.number }}:*),Bash(gh label list:*),Bash(gh search issues:*)"
@@ -125,7 +157,18 @@ jobs:
         run: |
           MARKER='<!-- claude-issue-triage -->'
           BODY_FILE="$(mktemp)"
-          { echo "$MARKER"; cat .claude-triage/diagnostico.md; } > "$BODY_FILE"
+          # Normaliza el Markdown por si Claude no siguió el formato al pie de la letra:
+          # quita CRLF, un bloque ```markdown que envuelva todo el archivo y la
+          # indentación común (que GitHub mostraría como bloque de código).
+          python3 - .claude-triage/diagnostico.md > "$BODY_FILE.md" <<'PY'
+          import re, sys, textwrap
+          text = open(sys.argv[1], encoding="utf-8").read().replace("\r\n", "\n").strip("\n")
+          m = re.fullmatch(r"```(?:markdown|md)?[ \t]*\n(.*)\n```", text, re.S)
+          if m:
+              text = m.group(1)
+          print(textwrap.dedent(text).strip())
+          PY
+          { echo "$MARKER"; echo; cat "$BODY_FILE.md"; } > "$BODY_FILE"
 
           COMMENT_ID="$(gh api "repos/$GH_REPO/issues/$ISSUE_NUMBER/comments" --paginate \
             --jq ".[] | select(.user.login == \"github-actions[bot]\" and (.body | startswith(\"$MARKER\"))) | .id" \
