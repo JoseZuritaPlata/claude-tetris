@@ -187,6 +187,156 @@ kbd {
   background: var(--accent-hover);
 }
 
+/* ---- Records ---- */
+.hidden {
+  display: none !important;
+}
+
+.start-title {
+  font-size: 40px;
+  font-weight: 800;
+  letter-spacing: 8px;
+  color: var(--accent);
+}
+
+.records {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: 440px;
+  max-width: 100%;
+}
+
+.records-table table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 12px;
+}
+
+.records-table {
+  width: 100%;
+}
+
+.records-table th {
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 10px;
+  letter-spacing: 1px;
+  color: var(--label);
+  font-weight: 600;
+  padding: 4px 6px;
+  border-bottom: 1px solid var(--border);
+}
+
+.records-table td {
+  padding: 4px 6px;
+  color: var(--text);
+  border-bottom: 1px solid var(--grid);
+}
+
+.records-table td.num {
+  text-align: right;
+  color: var(--accent);
+}
+
+.records-table td.name {
+  text-align: left;
+}
+
+.records-table tr.highlight td {
+  background: var(--accent);
+  color: var(--bg);
+  font-weight: 700;
+}
+
+.records-empty {
+  font-size: 12px;
+  color: var(--muted);
+  padding: 8px 0;
+}
+
+.records-stats {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.records-stats b {
+  font-family: 'Courier New', Courier, monospace;
+  color: var(--accent);
+}
+
+.record-msg {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.record-form {
+  display: flex;
+  gap: 8px;
+}
+
+.record-form input {
+  background: var(--board-bg);
+  color: var(--text);
+  border: 1px solid var(--kbd-border);
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 14px;
+  width: 170px;
+  user-select: text;
+}
+
+.record-form input:focus {
+  outline: 2px solid var(--accent);
+}
+
+.record-form button,
+#play-btn {
+  background: var(--accent);
+  color: var(--bg);
+  border: none;
+  border-radius: 6px;
+  padding: 8px 18px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: 1px;
+  transition: background 0.15s;
+}
+
+#play-btn {
+  margin-top: 8px;
+  padding: 10px 36px;
+}
+
+.record-form button:hover,
+#play-btn:hover {
+  background: var(--accent-hover);
+}
+
+.records-reset {
+  background: none;
+  border: 1px solid var(--danger);
+  color: var(--danger);
+  border-radius: 6px;
+  padding: 4px 12px;
+  font-size: 11px;
+  cursor: pointer;
+  letter-spacing: 1px;
+}
+
+.records-reset:hover {
+  background: var(--danger);
+  color: var(--bg);
+}
+
 /* ---- Switch de tema ---- */
 .theme-switch {
   display: flex;
