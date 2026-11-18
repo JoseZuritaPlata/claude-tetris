@@ -106,8 +106,8 @@ function clearLines() {
   if (cleared) {
     lines += cleared;
     score += (LINE_SCORES[cleared] || 0) * level;
-    level = Math.floor(lines / 10) + 1;
-    dropInterval = Math.max(100, 1000 - (level - 1) * 90);
+    level = Math.max(startLevel, Math.floor(lines / 10) + 1);
+    dropInterval = speedForLevel(level);
     updateHUD();
   }
 }
@@ -230,13 +230,13 @@ function togglePause() {
   if (gameOver) return;
   paused = !paused;
   if (!paused) {
+    closePauseMenu();
+    dropAccum = 0;
     lastTime = performance.now();
     loop(lastTime);
   } else {
     cancelAnimationFrame(animId);
-    overlayTitle.textContent = 'PAUSA';
-    overlayScore.textContent = '';
-    overlay.classList.remove('hidden');
+    openPauseMenu();
   }
 }
 
@@ -260,23 +260,25 @@ function init() {
   board = createBoard();
   score = 0;
   lines = 0;
-  level = 1;
+  level = startLevel;
   paused = false;
   gameOver = false;
-  dropInterval = 1000;
+  dropInterval = speedForLevel(level);
   dropAccum = 0;
   lastTime = performance.now();
   next = randomPiece();
   spawn();
   updateHUD();
   overlay.classList.add('hidden');
+  closePauseMenu();
   cancelAnimationFrame(animId);
   animId = requestAnimationFrame(loop);
 }
 
 document.addEventListener('keydown', e => {
-  if (e.code === 'KeyP') { togglePause(); return; }
+  if (handlePauseKey(e)) return;
   if (paused || gameOver) return;
+  if (heldFromMenu.has(e.code)) { e.preventDefault(); return; } // tecla sostenida desde el menú
   switch (e.code) {
     case 'ArrowLeft':
       if (!collide(current.shape, current.x - 1, current.y)) current.x--;
@@ -319,5 +321,139 @@ themeToggle.addEventListener('change', () => {
   try { localStorage.setItem('theme', theme); } catch (_) {}
   themeToggle.blur(); // evita que Space/flechas manejen el switch durante el juego
 });
+
+// ---- Menú de pausa ----
+const pauseMenu = document.getElementById('pause-menu');
+const pauseResumeBtn = document.getElementById('pause-resume');
+const pauseRestartBtn = document.getElementById('pause-restart');
+const pauseControlsBtn = document.getElementById('pause-controls-btn');
+const pauseControlsList = document.getElementById('pause-controls');
+const pauseLevel = document.getElementById('pause-level');
+const pauseLevelValue = document.getElementById('pause-level-value');
+const levelStepBtns = pauseLevel.querySelectorAll('.level-step');
+const pauseItems = [pauseResumeBtn, pauseRestartBtn, pauseControlsBtn, pauseLevel];
+const MIN_START_LEVEL = 1;
+const MAX_START_LEVEL = 10;
+// Teclas pulsadas con el menú abierto: se ignoran en el juego hasta soltarlas,
+// así una tecla mantenida (o su auto-repetición) no mueve la pieza al reanudar.
+const heldFromMenu = new Set();
+
+function speedForLevel(lvl) {
+  return Math.max(100, 1000 - (lvl - 1) * 90);
+}
+
+let startLevel = MIN_START_LEVEL;
+try {
+  const saved = parseInt(localStorage.getItem('tetris.startLevel'), 10);
+  if (saved >= MIN_START_LEVEL && saved <= MAX_START_LEVEL) startLevel = saved;
+} catch (_) {}
+
+function renderStartLevel() {
+  pauseLevelValue.textContent = startLevel;
+  pauseLevel.setAttribute('aria-valuenow', startLevel);
+  levelStepBtns[0].disabled = startLevel === MIN_START_LEVEL;
+  levelStepBtns[1].disabled = startLevel === MAX_START_LEVEL;
+}
+
+function setStartLevel(lvl) {
+  startLevel = Math.min(MAX_START_LEVEL, Math.max(MIN_START_LEVEL, lvl));
+  renderStartLevel();
+  try { localStorage.setItem('tetris.startLevel', String(startLevel)); } catch (_) {}
+}
+
+function setPauseControlsVisible(show) {
+  pauseControlsList.classList.toggle('hidden', !show);
+  pauseControlsBtn.setAttribute('aria-expanded', String(show));
+  pauseControlsBtn.textContent = show ? 'Ocultar controles' : 'Ver controles';
+}
+
+function openPauseMenu() {
+  pauseMenu.classList.remove('hidden');
+  pauseResumeBtn.focus();
+}
+
+function closePauseMenu() {
+  pauseMenu.classList.add('hidden');
+  setPauseControlsVisible(false);
+  // Quita el foco para que Space/Enter no vuelvan a activar un botón ya en juego
+  if (pauseMenu.contains(document.activeElement)) document.activeElement.blur();
+}
+
+function movePauseFocus(dir) {
+  const n = pauseItems.length;
+  const i = pauseItems.indexOf(document.activeElement);
+  const target = i === -1 ? (dir > 0 ? 0 : n - 1) : (i + dir + n) % n;
+  pauseItems[target].focus();
+}
+
+function activatePauseItem(el) {
+  if (el === pauseResumeBtn) togglePause();
+  else if (el === pauseRestartBtn) init();
+  else if (el === pauseControlsBtn) setPauseControlsVisible(pauseControlsList.classList.contains('hidden'));
+  else if (el === pauseLevel) setStartLevel(startLevel % MAX_START_LEVEL + 1); // Enter: cicla 1→10→1
+}
+
+// Devuelve true si la tecla la consume la pausa (y no debe llegar al juego).
+function handlePauseKey(e) {
+  const isPauseKey = e.code === 'KeyP' || e.code === 'Escape';
+  if (!paused) {
+    if (!isPauseKey || gameOver || e.repeat) return false;
+    e.preventDefault();
+    togglePause();
+    return true;
+  }
+
+  // Menú abierto: ninguna tecla llega al juego.
+  heldFromMenu.add(e.code);
+  const focused = document.activeElement;
+  switch (e.code) {
+    case 'KeyP':
+    case 'Escape':
+      e.preventDefault();
+      if (!e.repeat) togglePause();
+      break;
+    case 'ArrowDown':
+      e.preventDefault();
+      movePauseFocus(1);
+      break;
+    case 'ArrowUp':
+      e.preventDefault();
+      movePauseFocus(-1);
+      break;
+    case 'Tab':
+      e.preventDefault();
+      movePauseFocus(e.shiftKey ? -1 : 1);
+      break;
+    case 'ArrowLeft':
+    case 'ArrowRight':
+      e.preventDefault();
+      if (focused === pauseLevel) setStartLevel(startLevel + (e.code === 'ArrowRight' ? 1 : -1));
+      break;
+    case 'Enter':
+    case 'NumpadEnter':
+    case 'Space':
+      // preventDefault evita el click nativo del botón (y que se repita tras cerrar)
+      e.preventDefault();
+      if (!e.repeat && pauseItems.includes(focused)) activatePauseItem(focused);
+      break;
+  }
+  return true;
+}
+
+document.addEventListener('keyup', e => heldFromMenu.delete(e.code));
+window.addEventListener('blur', () => heldFromMenu.clear());
+
+pauseResumeBtn.addEventListener('click', () => activatePauseItem(pauseResumeBtn));
+pauseRestartBtn.addEventListener('click', () => activatePauseItem(pauseRestartBtn));
+pauseControlsBtn.addEventListener('click', () => activatePauseItem(pauseControlsBtn));
+levelStepBtns.forEach(btn => {
+  btn.addEventListener('mousedown', e => e.preventDefault()); // mantiene el foco en el selector
+  btn.addEventListener('click', () => {
+    setStartLevel(startLevel + Number(btn.dataset.step));
+    pauseLevel.focus();
+  });
+});
+
+renderStartLevel();
 
 init();

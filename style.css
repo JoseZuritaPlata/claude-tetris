@@ -232,3 +232,110 @@ kbd {
 .theme-switch input:focus-visible + .track {
   outline: 2px solid var(--accent);
 }
+
+/* ---- Menú de pausa ---- */
+.pause-box {
+  width: 220px;
+  gap: 10px;
+}
+
+#pause-title {
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: 4px;
+  color: var(--accent);
+  margin-bottom: 4px;
+}
+
+.pause-item {
+  width: 100%;
+  background: var(--kbd-bg);
+  color: var(--text);
+  border: 1px solid var(--kbd-border);
+  border-radius: 6px;
+  padding: 9px 12px;
+  font-size: 14px;
+  font-weight: 700;
+  font-family: inherit;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.pause-item:hover {
+  border-color: var(--accent);
+}
+
+.pause-item:focus {
+  outline: none;
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--bg);
+}
+
+.pause-level {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  cursor: default;
+}
+
+.pause-level b {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 16px;
+}
+
+.level-step {
+  background: none;
+  border: none;
+  color: inherit;
+  font-size: 12px;
+  padding: 2px 6px;
+  cursor: pointer;
+  opacity: 0.8;
+}
+
+.level-step:hover {
+  opacity: 1;
+}
+
+.level-step:disabled {
+  opacity: 0.25;
+  cursor: default;
+}
+
+.pause-controls {
+  list-style: none;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--board-bg);
+}
+
+.pause-controls.hidden {
+  display: none;
+}
+
+.pause-controls li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.pause-hint {
+  font-size: 10px;
+  line-height: 1.8;
+  color: var(--label);
+}
+
+.pause-hint kbd {
+  font-size: 9px;
+  padding: 0 4px;
+}
