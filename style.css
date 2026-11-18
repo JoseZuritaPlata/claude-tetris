@@ -232,3 +232,64 @@ kbd {
 .theme-switch input:focus-visible + .track {
   outline: 2px solid var(--accent);
 }
+
+/* ---- Skins ---- */
+/* Por encima del overlay: se puede cambiar de skin en pausa / game over */
+.skin-section {
+  position: relative;
+  z-index: 1;
+}
+
+.skin-select {
+  background: var(--kbd-bg);
+  color: var(--text);
+  border: 1px solid var(--kbd-border);
+  border-radius: 4px;
+  padding: 4px 6px;
+  font-size: 12px;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.skin-select:focus-visible {
+  outline: 2px solid var(--accent);
+}
+
+body[data-skin="neon"] {
+  --bg: #000000;
+  --border: #00f0ff;
+  --accent: #00f0ff;
+  --accent-hover: #7ff8ff;
+  --label: #6a6a90;
+  --text: #e0f7ff;
+  --kbd-bg: #0a0a14;
+  --kbd-border: #1f2a40;
+  --kbd-text: #9adfe8;
+  --muted: #8a9bb0;
+  --overlay-bg: rgba(0, 0, 0, 0.75);
+}
+
+body[data-skin="neon"] #board,
+body[data-skin="neon"] #next-canvas {
+  box-shadow: 0 0 18px rgba(0, 240, 255, 0.45);
+}
+
+body[data-skin="neon"] .value {
+  text-shadow: 0 0 8px var(--accent);
+}
+
+body[data-skin="pastel"] #board,
+body[data-skin="pastel"] #next-canvas {
+  border-color: #e6d9ef;
+  border-radius: 10px;
+}
+
+body[data-skin="pixel"] #board,
+body[data-skin="pixel"] #next-canvas {
+  border-radius: 0;
+  border: 3px solid #3a3a5a;
+}
+
+body[data-skin="pixel"] .value {
+  text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.5);
+}
